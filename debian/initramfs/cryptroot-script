@@ -2,6 +2,8 @@
 
 PREREQ="cryptroot-prepare"
 
+PREVIOUS_PASSWORD=""
+
 #
 # Standard initramfs preamble
 #
@@ -269,9 +271,14 @@ setup_mapping()
 
 
 		if [ ! -e "$NEWROOT" ]; then
+			if [ -z "$PREVIOUS_PASSWORD" ]; then # no previous password found, ask for them
+				PREVIOUS_PASSWORD=`$cryptkeyscript "$cryptkey"`
+			fi
 			if ! crypttarget="$crypttarget" cryptsource="$cryptsource" \
-			     $cryptkeyscript "$cryptkey" | $cryptopen --key-file=- ; then
+			    echo -n "$PREVIOUS_PASSWORD" | $cryptopen --key-file=- ; then
 				message "cryptsetup: cryptsetup failed, bad password or options?"
+				# reset PREVIOUS_PASSWORD if it is wrong
+				PREVIOUS_PASSWORD=""
 				continue
 			fi
 		fi
